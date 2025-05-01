@@ -23,15 +23,9 @@ go install github.com/piotrszyma/kk@latest
 
 This package is built on top of [cobra-cli](https://github.com/spf13/cobra-cli/blob/main/README.md).
 
-### Installation
-
-```bash
-go install github.com/spf13/cobra-cli@latest
-```
-
 ### Usage
 
 ```bash
 # Run cobra-cli to add command "foo".
-cobra-cli add foo
+go tool cobra-cli add foo
 ```
