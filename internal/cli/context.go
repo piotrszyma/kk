@@ -48,7 +48,17 @@ func ChangeContext() {
 
 	// Sort ctxWithAlias by Name
 	sort.Slice(ctxWithAlias, func(i, j int) bool {
-		return ctxWithAlias[i].Name < ctxWithAlias[j].Name
+		ith := ctxWithAlias[i]
+		jth := ctxWithAlias[j]
+		if ith.HasAlias() && jth.HasAlias() {
+			return ith.Alias < jth.Alias
+		}
+
+		if ith.HasAlias() {
+			return true
+		}
+
+		return ith.Name < jth.Name
 	})
 
 	idx, err := fuzzyfinder.Find(
