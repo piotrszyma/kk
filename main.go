@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/ktr0731/go-fuzzyfinder"
 	"gopkg.in/yaml.v3"
@@ -103,6 +104,11 @@ func main() {
 			Context:   context,
 		})
 	}
+
+	// Sort ctxWithAlias by Name
+	sort.Slice(ctxWithAlias, func(i, j int) bool {
+		return ctxWithAlias[i].Name < ctxWithAlias[j].Name
+	})
 
 	idx, err := fuzzyfinder.Find(
 		ctxWithAlias,
