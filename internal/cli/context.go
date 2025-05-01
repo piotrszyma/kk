@@ -1,15 +1,28 @@
 package cli
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"log"
 	"os"
-	"sort"
+	"slices"
 
 	"github.com/ktr0731/go-fuzzyfinder"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
+
+func setK8sContext(k8sConfig *api.Config, ctxName string) error {
+	configAccess := clientcmd.NewDefaultPathOptions()
+	k8sConfig.CurrentContext = ctxName
+	err := clientcmd.ModifyConfig(configAccess, *k8sConfig, true)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func ChangeContext() {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
@@ -46,19 +59,30 @@ func ChangeContext() {
 		})
 	}
 
-	// Sort ctxWithAlias by Name
-	sort.Slice(ctxWithAlias, func(i, j int) bool {
-		ith := ctxWithAlias[i]
-		jth := ctxWithAlias[j]
-		if ith.HasAlias() && jth.HasAlias() {
-			return ith.Alias < jth.Alias
-		}
+	slices.SortStableFunc(ctxWithAlias, func(i, j ContextWithAlias) int {
+		iHasAlias := i.HasAlias()
+		jHasAlias := j.HasAlias()
 
-		if ith.HasAlias() {
-			return true
+		// Primary Sort: Alias (Presence and Value)
+		if iHasAlias && jHasAlias {
+			// Both have aliases: Compare them
+			aliasCmp := cmp.Compare(i.Alias, j.Alias)
+			if aliasCmp != 0 {
+				return aliasCmp // Sort by alias if different
+			}
+			// Aliases are the same, fall through to compare by Name
+		} else if iHasAlias { // Only i has alias
+			return -1 // i comes before j
+		} else if jHasAlias { // Only j has alias
+			return 1 // j comes before i (so i comes after j)
 		}
+		// If we reach here, either:
+		// 1. Aliases were the same (fell through from the first `if`)
+		// 2. Neither had an alias (skipped the `else if` blocks)
+		// In both cases, proceed to Secondary Sort by Name.
 
-		return ith.Name < jth.Name
+		// Secondary Sort: Name
+		return cmp.Compare(i.Name, j.Name)
 	})
 
 	idx, err := fuzzyfinder.Find(
@@ -90,19 +114,14 @@ func ChangeContext() {
 		log.Fatal(err)
 	}
 
-	ctx := ctxWithAlias[idx]
-	configAccess := clientcmd.NewDefaultPathOptions()
-	k8sConfig.CurrentContext = ctx.Name
-	err = clientcmd.ModifyConfig(configAccess, *k8sConfig, true)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ctxSelected := ctxWithAlias[idx]
+
+	setK8sContext(k8sConfig, ctxSelected.Name)
 
 	var aliasSuffix string
-
-	if ctx.HasAlias() {
-		aliasSuffix = fmt.Sprintf(" (aliased: \"%s\")", ctx.Alias)
+	if ctxSelected.HasAlias() {
+		aliasSuffix = fmt.Sprintf(" (aliased: \"%s\")", ctxSelected.Alias)
 	}
 
-	fmt.Fprintf(os.Stdout, "Switched to context \"%s\"%s.\n", ctx.Name, aliasSuffix)
+	fmt.Fprintf(os.Stdout, "Switched to context \"%s\"%s.\n", ctxSelected.Name, aliasSuffix)
 }
