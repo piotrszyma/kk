@@ -10,12 +10,14 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "kk",
 	Short: "Extension to kubectl",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Long: `kk is a command-line utility designed to extend the functionality of
+kubectl, aiming to streamline common Kubernetes workflows and improve user experience,
+particularly around context management.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+While kubectl is powerful, certain tasks like managing numerous contexts or
+dealing with long, auto-generated context names (common with cloud providers like
+GKE, EKS, AKS) can become cumbersome. kk provides helpful additions to address
+these points.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
