@@ -1,0 +1,8 @@
+# This is a sample config file for kk cli.
+#
+# To create aliases for given context, add entry to "aliases" list.
+context:
+  aliases:
+    # Uncomment lines below to configure alias "aliased" for context "example".
+    # - name: example
+    #   alias: aliased
