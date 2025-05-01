@@ -88,5 +88,11 @@ func ChangeContext() {
 		log.Fatal(err)
 	}
 
-	fmt.Fprintf(os.Stdout, "Switched to context \"%s\".\n", ctx.Name)
+	var aliasSuffix string
+
+	if ctx.HasAlias() {
+		aliasSuffix = fmt.Sprintf(" (aliased: \"%s\")", ctx.Alias)
+	}
+
+	fmt.Fprintf(os.Stdout, "Switched to context \"%s\"%s.\n", ctx.Name, aliasSuffix)
 }
