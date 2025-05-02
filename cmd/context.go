@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/piotrszyma/kk/internal/cli"
+	"github.com/piotrszyma/kk/internal/k8s"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,17 @@ To define custom aliases, create or edit the configuration file at:
 		// TODO(pszyma): Ability to customize kubeConfig path.
 		kubeConfigPath := ""
 
-		if err := cli.ChangeContext(kubeConfigPath); err != nil {
+		k8sConfig, err := k8s.LoadConfig(kubeConfigPath)
+		if err != nil {
+			log.Fatalf("failed to load k8s config: %v", err)
+		}
+
+		config, err := cli.LoadConfig()
+		if err != nil {
+			log.Fatalf("failed to load kk config: %v", err)
+		}
+
+		if err := cli.ChangeContext(config, k8sConfig); err != nil {
 			log.Fatalf("context change failed: %v", err)
 		}
 	},
