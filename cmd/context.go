@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/piotrszyma/kk/internal/cli"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +21,12 @@ To define custom aliases, create or edit the configuration file at:
 '~/.config/kk/config.yaml'
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		cli.ChangeContext()
+		// TODO(pszyma): Ability to customize kubeConfig path.
+		kubeConfigPath := ""
+
+		if err := cli.ChangeContext(kubeConfigPath); err != nil {
+			log.Fatalf("context change failed: %v", err)
+		}
 	},
 }
 

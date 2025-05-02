@@ -2,13 +2,12 @@ package cli
 
 import (
 	"cmp"
-	"errors"
 	"fmt"
-	"log"
 	"os"
 	"slices"
 
-	"github.com/ktr0731/go-fuzzyfinder"
+	"github.com/piotrszyma/kk/internal/tui"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -24,21 +23,43 @@ func setK8sContext(k8sConfig *api.Config, ctxName string) error {
 	return nil
 }
 
-func ChangeContext() {
+type ContextOption struct {
+	label       string
+	contextName string
+	alias       string
+	context     *api.Context
+	isCurrent   bool
+}
+
+func (c ContextOption) Label() string {
+	return c.label
+}
+
+func (c ContextOption) Preview() string {
+	var aliasSuffix string
+	if c.alias != "" {
+		aliasSuffix = fmt.Sprintf(" (aliased \"%s\")", c.alias)
+	}
+	return fmt.Sprintf("%s%s", c.contextName, aliasSuffix)
+}
+
+// TODO(pszyma): Make this function accept `Config`.
+func ChangeContext(
+	kubeConfigPath string,
+) error {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	// Alternatively, specify a path directly:
-	// loadingRules.ExplicitPath = "/path/to/your/.kube/config"
+	if kubeConfigPath != "" {
+		loadingRules.ExplicitPath = kubeConfigPath
+	}
 
 	config, err := LoadConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading kk config: %v\n", err)
-		os.Exit(1)
+		return errors.Wrapf(err, "failed to load kk config")
 	}
 
-	k8sConfig, err := loadingRules.Load() // Directly load the config using rules
+	k8sConfig, err := loadingRules.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading kubeconfig: %v\n", err)
-		os.Exit(1)
+		return errors.Wrapf(err, "failed to load k8s config")
 	}
 
 	ctxToAlias := map[string]string{}
@@ -46,82 +67,51 @@ func ChangeContext() {
 		ctxToAlias[alias.Name] = alias.Alias
 	}
 
-	ctxWithAlias := []ContextWithAlias{}
+	opts := []ContextOption{}
+
 	for contextName, context := range k8sConfig.Contexts {
 		isCurrent := contextName == k8sConfig.CurrentContext
 		alias := ctxToAlias[contextName]
 
-		ctxWithAlias = append(ctxWithAlias, ContextWithAlias{
-			IsCurrent: isCurrent,
-			Alias:     alias,
-			Name:      contextName,
-			Context:   context,
+		if alias != "" {
+			opts = append(opts, ContextOption{
+				label:       alias,
+				contextName: contextName,
+				context:     context,
+				isCurrent:   isCurrent,
+				alias:       alias,
+			})
+		}
+
+		opts = append(opts, ContextOption{
+			label:       contextName,
+			contextName: contextName,
+			context:     context,
+			isCurrent:   isCurrent,
+			alias:       alias,
 		})
 	}
 
-	slices.SortStableFunc(ctxWithAlias, func(i, j ContextWithAlias) int {
-		iHasAlias := i.HasAlias()
-		jHasAlias := j.HasAlias()
-
-		// Primary Sort: Alias (Presence and Value)
-		if iHasAlias && jHasAlias {
-			// Both have aliases: Compare them
-			aliasCmp := cmp.Compare(i.Alias, j.Alias)
-			if aliasCmp != 0 {
-				return aliasCmp // Sort by alias if different
-			}
-			// Aliases are the same, fall through to compare by Name
-		} else if iHasAlias { // Only i has alias
-			return -1 // i comes before j
-		} else if jHasAlias { // Only j has alias
-			return 1 // j comes before i (so i comes after j)
-		}
-		// If we reach here, either:
-		// 1. Aliases were the same (fell through from the first `if`)
-		// 2. Neither had an alias (skipped the `else if` blocks)
-		// In both cases, proceed to Secondary Sort by Name.
-
-		// Secondary Sort: Name
-		return cmp.Compare(i.Name, j.Name)
+	slices.SortStableFunc(opts, func(o1, o2 ContextOption) int {
+		return cmp.Compare(o1.Label(), o2.Label())
 	})
 
-	idx, err := fuzzyfinder.Find(
-		ctxWithAlias,
-		func(i int) string {
-			item := ctxWithAlias[i]
-
-			if item.HasAlias() {
-				return fmt.Sprintf("%s (%s)", item.Alias, item.Name)
-			} else {
-				return item.Name
-			}
-		},
-		fuzzyfinder.WithPreviewWindow(func(i, w, h int) string {
-			if i == -1 {
-				return ""
-			}
-			return fmt.Sprintf("Context: %s (%s)",
-				ctxWithAlias[i].Name,
-				ctxWithAlias[i].Alias,
-			)
-		}))
-
+	optSelected, err := tui.OptionPicker(opts)
 	if err != nil {
-		if errors.Is(err, fuzzyfinder.ErrAbort) {
-			return
-		}
-
-		log.Fatal(err)
+		return errors.Wrapf(err, "failed to select option")
 	}
 
-	ctxSelected := ctxWithAlias[idx]
-
-	setK8sContext(k8sConfig, ctxSelected.Name)
+	err = setK8sContext(k8sConfig, optSelected.contextName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set k8s context")
+	}
 
 	var aliasSuffix string
-	if ctxSelected.HasAlias() {
-		aliasSuffix = fmt.Sprintf(" (aliased: \"%s\")", ctxSelected.Alias)
+	if optSelected.alias != "" {
+		aliasSuffix = fmt.Sprintf(" (aliased: \"%s\")", optSelected.alias)
 	}
 
-	fmt.Fprintf(os.Stdout, "Switched to context \"%s\"%s.\n", ctxSelected.Name, aliasSuffix)
+	fmt.Fprintf(os.Stdout, "Switched to context \"%s\"%s.\n", optSelected.contextName, aliasSuffix)
+
+	return nil
 }
