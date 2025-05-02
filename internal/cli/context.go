@@ -30,10 +30,9 @@ func (c ContextOption) Preview() string {
 	return fmt.Sprintf("%s%s", c.contextName, aliasSuffix)
 }
 
-func ChangeContext(
+func contextAliases(
 	config Config,
-	k8sConfig *k8s.ApiConfig,
-) error {
+) map[string][]string {
 	ctxNameToAliases := map[string][]string{}
 	for _, alias := range config.ContextConfig.Aliases {
 		if _, ok := ctxNameToAliases[alias.Name]; !ok {
@@ -43,6 +42,13 @@ func ChangeContext(
 		ctxNameToAliases[alias.Name] = append(ctxNameToAliases[alias.Name], alias.Alias)
 	}
 
+	return ctxNameToAliases
+}
+
+func contextOptsSorted(
+	k8sConfig *k8s.ApiConfig,
+	ctxNameToAliases map[string][]string,
+) []ContextOption {
 	opts := []ContextOption{}
 
 	for contextName := range k8sConfig.Contexts {
@@ -68,6 +74,17 @@ func ChangeContext(
 	slices.SortStableFunc(opts, func(o1, o2 ContextOption) int {
 		return cmp.Compare(o1.Label(), o2.Label())
 	})
+
+	return opts
+}
+
+func ChangeContext(
+	config Config,
+	k8sConfig *k8s.ApiConfig,
+) error {
+	ctxNameToAliases := contextAliases(config)
+
+	opts := contextOptsSorted(k8sConfig, ctxNameToAliases)
 
 	optSelected, err := tui.OptionPicker(opts)
 	if err != nil {
