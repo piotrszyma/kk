@@ -1,31 +1,74 @@
-## kk - kubectl extension
+# kk - kubectl extension
 
-An extension to kubectl.
+## Overview
+
+`kk` is a command-line utility designed to extend the functionality of `kubectl`. It aims to streamline common Kubernetes workflows and improve user experience, particularly around managing Kubernetes contexts.
+
+While `kubectl` is powerful, managing numerous contexts or dealing with long, auto-generated context names (common with cloud providers like GKE, EKS, AKS) can become cumbersome. `kk` provides helpful additions to address these points, making context switching faster and more intuitive.
 
 ## Features
 
-1. Create & use custom aliases for context names.
+* **Interactive Context Switching**: Easily switch between your Kubernetes contexts using an interactive fuzzy finder interface.
+* **Context Aliases**: Create and use custom, shorter aliases for your lengthy or complex context names.
+* **Fuzzy Finder**: Quickly find the context or alias you're looking for, even with many entries.
+
+**Example Usage:**
+
+Run `kk context` to launch the interactive context switcher:
 
 ```bash
-# Run this to switch context interactively.
 kk context
 ```
 
+This command provides an enhanced alternative to `kubectl config use-context`.
+
 ## Installation
 
-Requires go to be installed.
+**Prerequisites:**
+
+* Go (Golang) must be installed on your system.
+
+**Command:**
+
+Install the latest version using `go install`:
 
 ```bash
 go install github.com/piotrszyma/kk@latest
 ```
 
-## Development
+Ensure your Go bin directory (usually `$HOME/go/bin`) is in your system's `$PATH`.
 
-This package is built on top of [cobra-cli](https://github.com/spf13/cobra-cli/blob/main/README.md).
+## Configuration
 
-### Usage
+`kk` uses a configuration file primarily to define custom aliases for your Kubernetes context names.
 
-```bash
-# Run cobra-cli to add command "foo".
-go tool cobra-cli add foo
-```
+* **Configuration File Location**: Create or edit the configuration file at:
+    ```
+    ~/.config/kk/config.yaml
+    ```
+    If the file or the `.config/kk` directory does not exist when `kk` is run, it will be created automatically with default values (an empty configuration).
+
+* **Configuration Structure**:
+
+    The configuration file uses YAML format. To define aliases, add entries under `context.aliases`. Each entry requires a `name` (the actual Kubernetes context name) and an `alias` (the custom name you want to use).
+
+* **Example `~/.config/kk/config.yaml`**:
+
+    ```yaml
+    # ~/.config/kk/config.yaml
+    context:
+      aliases:
+        # Alias "prod-main" for the context "gke_my-project-123_us-central1-a_my-main-cluster"
+        - name: gke_my-project-123_us-central1-a_my-main-cluster
+          alias: prod-main
+
+        # Alias "dev-user1" for the context "arn:aws:eks:eu-west-1:123456789012:cluster/development-cluster-user1"
+        - name: arn:aws:eks:eu-west-1:123456789012:cluster/development-cluster-user1
+          alias: dev-user1
+
+        # You can have multiple aliases for the same context name if needed
+        - name: gke_my-project-123_us-central1-a_my-main-cluster
+          alias: main-gke-prod
+    ```
+
+When you run `kk context`, both the original context names and your defined aliases will appear in the fuzzy finder, allowing you to select either. Selecting an alias will switch the Kubernetes context to the corresponding original context name.
