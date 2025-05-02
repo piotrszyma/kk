@@ -6,6 +6,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+type ApiConfig = api.Config
+
+type ApiContext = api.Context
+
 func LoadConfig(kubeConfigPath string) (*api.Config, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if kubeConfigPath != "" {

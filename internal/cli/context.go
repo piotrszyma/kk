@@ -9,7 +9,6 @@ import (
 	"github.com/piotrszyma/kk/internal/k8s"
 	"github.com/piotrszyma/kk/internal/tui"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 type ContextOption struct {
@@ -33,7 +32,7 @@ func (c ContextOption) Preview() string {
 
 func ChangeContext(
 	config Config,
-	k8sConfig *api.Config,
+	k8sConfig *k8s.ApiConfig,
 ) error {
 	ctxNameToAliases := map[string][]string{}
 	for _, alias := range config.ContextConfig.Aliases {

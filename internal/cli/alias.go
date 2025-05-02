@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"k8s.io/client-go/tools/clientcmd/api"
+	"github.com/piotrszyma/kk/internal/k8s"
 )
 
 // ContextWithAlias may have alias.
 type ContextWithAlias struct {
 	Name      string
-	Context   *api.Context
+	Context   *k8s.ApiContext
 	IsCurrent bool
 
 	// Alias, empty indicates no alias.
