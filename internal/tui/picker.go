@@ -31,3 +31,7 @@ func OptionPicker[T Option](opts []T) (T, error) {
 
 	return opts[idx], nil
 }
+
+func IsAbortError(err error) bool {
+	return errors.Is(err, fuzzyfinder.ErrAbort)
+}

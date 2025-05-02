@@ -88,6 +88,10 @@ func ChangeContext(
 
 	optSelected, err := tui.OptionPicker(opts)
 	if err != nil {
+		if tui.IsAbortError(err) {
+			return nil
+		}
+
 		return errors.Wrapf(err, "failed to select option")
 	}
 
