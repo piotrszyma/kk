@@ -14,6 +14,8 @@ While `kubectl` is powerful, managing numerous contexts or dealing with long, au
 
 **Example Usage:**
 
+### Switch context (by alias)
+
 Run `kk context` to launch the interactive context switcher:
 
 ```bash
@@ -21,6 +23,16 @@ kk context
 ```
 
 This command provides an enhanced alternative to `kubectl config use-context`.
+
+### Resolve context alias
+
+Run `kk context resolve "your-alias"` to resolve alias into real context name.
+
+```bash
+kk context resolve "your-alias"
+```
+
+This command prints context aliased by name "your-alias" to standard output.
 
 ## Installation
 
