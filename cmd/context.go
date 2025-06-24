@@ -21,6 +21,7 @@ Configuration:
 To define custom aliases, create or edit the configuration file at:
 '~/.config/kk/config.yaml'
 `,
+	Aliases: []string{"c", "ctx"},
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO(pszyma): Ability to customize kubeConfig path.
 		kubeConfigPath := ""
