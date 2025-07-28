@@ -34,6 +34,22 @@ kk context resolve "your-alias"
 
 This command prints context aliased by name "your-alias" to standard output.
 
+### Display resource quota
+
+Run `kk quota [namespace]` to display resource quota for a namespace in a human-readable format.
+
+```bash
+kk quota
+# or
+kk quota my-namespace
+```
+
+This command fetches and displays resource quota information for the specified namespace (or current namespace if none specified). It shows resource usage including CPU requests/limits, memory requests/limits, and storage requests. The output includes:
+- NAME: The resource name (e.g., requests.cpu, limits.memory)
+- USED: Currently used amount of the resource
+- HARD: Maximum allowed amount of the resource (quota limit)
+- USAGE: Percentage of used resources relative to the quota limit
+
 ## Installation
 
 **Prerequisites:**
